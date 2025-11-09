@@ -1,15 +1,12 @@
+# app.py
 from flask import Flask, render_template, jsonify, session, request
 import os
 import logging
 from datetime import datetime
 from functools import wraps
-from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure secret key for sessions
-
-# Enable CORS to allow requests from your Vercel domain
-CORS(app, origins=["https://finalyrproject.digital"])
 
 # Configure logging
 logging.basicConfig(
@@ -18,6 +15,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# Get the absolute path of the directory this file is in
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_FILE = os.path.join(BASE_DIR, "keylog.txt")
 
@@ -36,7 +34,7 @@ def dashboard():
         if os.path.exists(LOG_FILE):
             with open(LOG_FILE, "r", encoding="utf-8") as f:
                 logs = f.read().replace("\n", "<br>")
-            logging.info("Logs retrieved successfully")
+                logging.info("Logs retrieved successfully")
         else:
             logs = "No logs available."
             logging.warning("Log file not found")
@@ -81,23 +79,15 @@ def clear_logs():
         logging.error(f"Error clearing logs: {str(e)}")
         return jsonify({'error': "Error clearing logs"}), 500
 
-# New endpoint to receive keystroke data
-@app.route('/log-keystroke', methods=['POST'])
-def log_keystroke():
-    try:
-        data = request.json
-        key = data.get('key')
-        timestamp = datetime.now().isoformat()
-        if key:
-            with open(LOG_FILE, 'a', encoding='utf-8') as f:
-                f.write(f'{timestamp} - {key}\n')
-            logging.info(f'Keystroke logged: {key}')
-            return jsonify({'success': True})
-        else:
-            return jsonify({'error': 'No key provided'}), 400
-    except Exception as e:
-        logging.error(f"Error logging keystroke: {str(e)}")
-        return jsonify({'error': 'Logging failed'}), 500
+@app.errorhandler(404)
+def not_found_error(error):
+    logging.warning(f"404 error: {request.url}")
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    logging.error(f"500 error: {str(error)}")
+    return render_template('500.html'), 500
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5000)  # Use debug=False in production
+    app.run(debug=False, port=5000)  # Set debug=False for production
