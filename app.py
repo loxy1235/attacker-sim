@@ -9,7 +9,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure secret key for sessions
 
 # Enable CORS to allow requests from your Vercel domain
-CORS(app, origins=["https://www.finalyrproject.digital"])
+CORS(app, origins=["https://finalyrproject.digital"])
 
 # Configure logging
 logging.basicConfig(
